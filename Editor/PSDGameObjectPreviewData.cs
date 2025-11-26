@@ -29,13 +29,13 @@ namespace UnityEditor.U2D.PSD
             m_ShowPivot = showPivot;
             m_Root = new GameObject();
             m_PreviewObject = GameObject.Instantiate(assetPrefab, Vector3.zero, Quaternion.identity);
-            m_PreviewObject.transform.parent = m_Root.transform;
+            m_PreviewObject.transform.SetParent(m_Root.transform);
             Bounds renderableBounds = GetRenderableBounds(m_PreviewObject);
             float axisScale = Math.Max(renderableBounds.extents.x, m_RenderableBounds.extents.y) * 0.5f;
             GameObject pivotGO = AssetDatabase.LoadAssetAtPath<GameObject>("Packages/com.unity.2d.psdimporter/Editor/Assets/pivot.fbx");
             m_PivotInstance = GameObject.Instantiate(pivotGO, Vector3.zero, Quaternion.identity);
             m_PivotInstance.transform.localScale = new Vector3(axisScale, axisScale, axisScale);
-            m_PivotInstance.transform.parent = m_Root.transform;
+            m_PivotInstance.transform.SetParent(m_Root.transform);
             m_PivotInstance.SetActive(m_ShowPivot);
             m_DocumentPivot = documentPivot;
             m_RenderUtility.AddSingleGO(m_Root);
