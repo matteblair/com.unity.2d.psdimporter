@@ -15,6 +15,7 @@ using UnityEditor.U2D.Common;
 using UnityEditor.U2D.Sprites;
 using UnityEngine.U2D;
 using UnityEngine.Scripting.APIUpdating;
+using UnityEngine.UI;
 
 #if ENABLE_2D_TILEMAP_EDITOR
 using UnityEditor.Tilemaps;
@@ -152,6 +153,9 @@ namespace UnityEditor.U2D.PSD
         ELayerMappingOption m_LayerMappingOption = ELayerMappingOption.UseLayerId;
         [SerializeField]
         bool m_GeneratePhysicsShape = false;
+
+        [SerializeField]
+        private bool m_CreateCanvasObjects = false;
 
         [SerializeField]
         bool m_PaperDollMode = false;
@@ -1154,7 +1158,7 @@ namespace UnityEditor.U2D.PSD
                 if (psdData.gameObject != null)
                 {
                     psdData.gameObject.transform.SetParent(root);
-                    psdData.gameObject.transform.SetSiblingIndex(root.childCount - 1);
+                    psdData.gameObject.transform.SetSiblingIndex(m_CreateCanvasObjects ? 0 : root.childCount - 1);
                 }
             }
         }
@@ -1307,6 +1311,11 @@ namespace UnityEditor.U2D.PSD
                 root.transform.SetSiblingIndex(0);
                 root.name = assetname + "_GO";
 
+                if (m_CreateCanvasObjects)
+                {
+                    root.AddComponent<RectTransform>();
+                }
+
 #if ENABLE_2D_ANIMATION
                 CharacterData currentCharacterData = characterData;
 
@@ -1332,12 +1341,12 @@ namespace UnityEditor.U2D.PSD
                     GUID layerSpriteID = l.spriteID;
                     Sprite sprite = sprites.FirstOrDefault(x => x.GetSpriteID() == layerSpriteID);
                     SpriteMetaData spriteMetaData = spriteImportData.FirstOrDefault(x => x.spriteID == layerSpriteID);
+                    if (m_CreateCanvasObjects && l.gameObject != null)
+                    {
+                        l.gameObject.AddComponent<RectTransform>();
+                    }
                     if (sprite != null && spriteMetaData != null && l.gameObject != null)
                     {
-                        SpriteRenderer spriteRenderer = l.gameObject.AddComponent<SpriteRenderer>();
-                        spriteRenderer.sprite = sprite;
-                        spriteRenderer.sortingOrder = psdLayers.Count - i;
-
                         Vector2 pivot = spriteMetaData.pivot;
                         pivot.x *= spriteMetaData.rect.width;
                         pivot.y *= spriteMetaData.rect.height;
@@ -1347,7 +1356,21 @@ namespace UnityEditor.U2D.PSD
                         spritePosition.y += pivot.y;
                         spritePosition *= (definitionScale / sprite.pixelsPerUnit);
 
-                        l.gameObject.transform.position = new Vector3(spritePosition.x, spritePosition.y, 0f);
+                        if (m_CreateCanvasObjects)
+                        {
+                            Image canvasImage = l.gameObject.AddComponent<Image>();
+                            canvasImage.sprite = sprite;
+                            canvasImage.rectTransform.sizeDelta = spriteMetaData.rect.size * (definitionScale / sprite.pixelsPerUnit);
+                            canvasImage.rectTransform.pivot = spriteMetaData.pivot;
+                            canvasImage.rectTransform.anchoredPosition = spritePosition;
+                        }
+                        else
+                        {
+                            SpriteRenderer spriteRenderer = l.gameObject.AddComponent<SpriteRenderer>();
+                            spriteRenderer.sprite = sprite;
+                            spriteRenderer.sortingOrder = psdLayers.Count - i;
+                            l.gameObject.transform.position = new Vector3(spritePosition.x, spritePosition.y, 0f);
+                        }
 
 #if ENABLE_2D_ANIMATION
                         if (characterSkeleton != null)
@@ -1382,15 +1405,28 @@ namespace UnityEditor.U2D.PSD
                 }
 
                 Rect prefabBounds = new Rect(0, 0, importData.documentSize.x / pixelsPerUnit, importData.documentSize.y / pixelsPerUnit);
-                Vector3 documentPivot = (Vector3)ImportUtilities.GetPivotPoint(prefabBounds, m_DocumentAlignment, m_DocumentPivot);
+                Vector2 documentPivot2d = ImportUtilities.GetPivotPoint(prefabBounds, SpriteAlignment.Center, m_DocumentPivot);
+                Vector3 documentPivot = (Vector3)documentPivot2d;
+                
+                if (root.TryGetComponent(out RectTransform rectTransform))
+                {
+                    rectTransform.sizeDelta = prefabBounds.size;
+                    rectTransform.pivot = documentPivot2d / prefabBounds.size;
+                }
+                
                 for (int i = 0; i < psdLayers.Count; ++i)
                 {
                     PSDLayer l = psdLayers[i];
-                    if (l.gameObject == null || l.gameObject.GetComponent<SpriteRenderer>() == null)
+                    if (l.gameObject == null)
                         continue;
-                    Vector3 p = l.gameObject.transform.localPosition;
-                    p -= documentPivot;
-                    l.gameObject.transform.localPosition = p;
+                    if (l.gameObject.GetComponent<SpriteRenderer>() != null)
+                    {
+                        l.gameObject.transform.localPosition -= documentPivot;
+                    }
+                    else if (l.gameObject.TryGetComponent(out Image image))
+                    {
+                        image.rectTransform.anchoredPosition -= documentPivot2d;
+                    }
                 }
                 for (int i = 0; i < boneGOs.Length; ++i)
                 {
@@ -1404,6 +1440,26 @@ namespace UnityEditor.U2D.PSD
 
             return root;
         }
+
+        // void UpdateParentBounds(List<PSDLayer> layers, List<Rect?> worldBounds, int index, Rect childBounds)
+        // {
+        //     var layer = layers[index];
+        //     if (layer.isGroup && layer.gameObject.TryGetComponent(out RectTransform rectTransform))
+        //     {
+        //         // Get child bounds in parent coordinates.
+        //         
+        //         if (worldBounds[index] is {} layerBounds)
+        //         {
+        //             // Extend bounds to contain child bounds.
+        //         }
+        //         else
+        //         {
+        //             // Set bounds to child bounds.
+        //             worldBounds[index] = childBounds;
+        //         }
+        //         
+        //     }
+        // }
 
         int spriteDataCount
         {
