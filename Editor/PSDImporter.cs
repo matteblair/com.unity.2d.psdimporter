@@ -146,7 +146,7 @@ namespace UnityEditor.U2D.PSD
         [SerializeField]
         Vector2 m_DocumentPivot = Vector2.zero;
         [SerializeField]
-        SpriteAlignment m_DocumentAlignment = SpriteAlignment.BottomCenter;
+        SpriteAlignment m_DocumentAlignment = SpriteAlignment.Center;
         [SerializeField]
         bool m_ImportHiddenLayers = false;
         [SerializeField]
@@ -1405,7 +1405,7 @@ namespace UnityEditor.U2D.PSD
                 }
 
                 Rect prefabBounds = new Rect(0, 0, importData.documentSize.x / pixelsPerUnit, importData.documentSize.y / pixelsPerUnit);
-                Vector2 documentPivot2d = ImportUtilities.GetPivotPoint(prefabBounds, SpriteAlignment.Center, m_DocumentPivot);
+                Vector2 documentPivot2d = ImportUtilities.GetPivotPoint(prefabBounds, m_DocumentAlignment, m_DocumentPivot);
                 Vector3 documentPivot = (Vector3)documentPivot2d;
                 
                 if (root.TryGetComponent(out RectTransform rectTransform))
@@ -1440,26 +1440,6 @@ namespace UnityEditor.U2D.PSD
 
             return root;
         }
-
-        // void UpdateParentBounds(List<PSDLayer> layers, List<Rect?> worldBounds, int index, Rect childBounds)
-        // {
-        //     var layer = layers[index];
-        //     if (layer.isGroup && layer.gameObject.TryGetComponent(out RectTransform rectTransform))
-        //     {
-        //         // Get child bounds in parent coordinates.
-        //         
-        //         if (worldBounds[index] is {} layerBounds)
-        //         {
-        //             // Extend bounds to contain child bounds.
-        //         }
-        //         else
-        //         {
-        //             // Set bounds to child bounds.
-        //             worldBounds[index] = childBounds;
-        //         }
-        //         
-        //     }
-        // }
 
         int spriteDataCount
         {
