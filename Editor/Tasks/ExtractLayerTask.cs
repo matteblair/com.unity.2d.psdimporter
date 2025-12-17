@@ -222,7 +222,7 @@ namespace UnityEditor.U2D.PSD
                     int startIndex = i;
                     int endIndex = i + childIndices.Count;
 
-                    if (flatten == false && inputLayer.flatten && startIndex < endIndex)
+                    if (!flatten && startIndex < endIndex)
                     {
                         RectInt groupBoundingBox = CalculateLayerRectInChildren(in inputLayers, in childIndices);
                         layerGroupData.Add(new LayerGroupData()

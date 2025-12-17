@@ -1343,7 +1343,14 @@ namespace UnityEditor.U2D.PSD
                     SpriteMetaData spriteMetaData = spriteImportData.FirstOrDefault(x => x.spriteID == layerSpriteID);
                     if (m_CreateCanvasObjects && l.gameObject != null)
                     {
-                        l.gameObject.AddComponent<RectTransform>();
+                        var layerRectTransform = l.gameObject.AddComponent<RectTransform>();
+                        if (l.isGroup)
+                        {
+                            var pivot = new Vector2(l.width, l.height) * 0.5f;
+                            float scale = definitionScale;
+                            layerRectTransform.position = (l.layerPosition + pivot) * scale;
+                            layerRectTransform.sizeDelta = new Vector2(l.width * scale, l.height * scale);
+                        }
                     }
                     if (sprite != null && spriteMetaData != null && l.gameObject != null)
                     {
@@ -1362,7 +1369,7 @@ namespace UnityEditor.U2D.PSD
                             canvasImage.sprite = sprite;
                             canvasImage.rectTransform.sizeDelta = spriteMetaData.rect.size * (definitionScale / sprite.pixelsPerUnit);
                             canvasImage.rectTransform.pivot = spriteMetaData.pivot;
-                            canvasImage.rectTransform.anchoredPosition = spritePosition;
+                            canvasImage.rectTransform.position = spritePosition;
                         }
                         else
                         {
@@ -1423,9 +1430,9 @@ namespace UnityEditor.U2D.PSD
                     {
                         l.gameObject.transform.localPosition -= documentPivot;
                     }
-                    else if (l.gameObject.TryGetComponent(out Image image))
+                    else if (l.parentIndex < 0 && l.gameObject.TryGetComponent(out RectTransform trfm))
                     {
-                        image.rectTransform.anchoredPosition -= documentPivot2d;
+                        trfm.anchoredPosition -= documentPivot2d;
                     }
                 }
                 for (int i = 0; i < boneGOs.Length; ++i)
