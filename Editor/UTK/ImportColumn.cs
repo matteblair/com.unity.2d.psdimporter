@@ -68,7 +68,7 @@ namespace UnityEditor.U2D.PSD
         {
             if (m_CollapseToggle.showMixedValue && m_CollapseToggle.value == false)
             {
-                if (!m_CollapseToggle.IsHovered())
+                if (!m_CollapseToggle.hasHoverPseudoState)
                     m_CollapseToggleCheckMark.visible = true;
             }
             else

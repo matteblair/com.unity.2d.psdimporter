@@ -1,11 +1,12 @@
 # Changelog
 
-## [14.0.3] - 2026-05-12
+
+## [15.0.0] - 2026-05-19
 ### Fixed
 - Package Manager Samples section title now displays "PSD Importer" consistently. (UUM-135396)
 
 ### Changed
-- Align online documentation URLs to package docs @14.0.
+- Pin hosted package documentation links to com.unity.2d.psdimporter@15.0 and align Unity Manual and Script Reference links to Unity 6000.6.
 
 ## [14.0.2] - 2026-02-17
 
