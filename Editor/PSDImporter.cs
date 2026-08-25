@@ -35,7 +35,7 @@ namespace UnityEditor.U2D.PSD
     [ScriptedImporter(60500000, new string[] { "psb" }, new[] { "psd" }, AllowCaching = true)]
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.psdimporter@15.0")]
     [MovedFrom("UnityEditor.Experimental.AssetImporters")]
-    public partial class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider
+    public partial class PSDImporter : ScriptedImporter, ISpriteEditorDataProvider, ISerializationCallbackReceiver
     {
         internal enum ELayerMappingOption
         {
@@ -112,6 +112,18 @@ namespace UnityEditor.U2D.PSD
         [SerializeField] List<SpriteMetaData> m_SingleSpriteImportData = new List<SpriteMetaData>(1) { new SpriteMetaData() };
         [SerializeField] List<SpriteMetaData> m_MultiSpriteImportData = new List<SpriteMetaData>();
         [SerializeField] List<SpriteMetaData> m_LayeredSpriteImportData = new List<SpriteMetaData>();
+
+        void ISerializationCallbackReceiver.OnBeforeSerialize() { }
+
+        // The field initializer does not survive deserialization, so a .meta holding an empty list
+        // brings the single entry back as absent. Everything below indexes [0] unconditionally.
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
+        {
+            if (m_SingleSpriteImportData == null || m_SingleSpriteImportData.Count < 1)
+                m_SingleSpriteImportData = new List<SpriteMetaData>(1) { new SpriteMetaData() };
+            else if (m_SingleSpriteImportData[0] == null)
+                m_SingleSpriteImportData[0] = new SpriteMetaData();
+        }
 
         // --- Obsolete sprite import data containers
 
@@ -1467,15 +1479,16 @@ namespace UnityEditor.U2D.PSD
                 return m_MultiSpriteImportData.FirstOrDefault(x => x.spriteID == guid);
             }
 
-            return GetSingleSpriteImportData();
+            // Data providers write authored data through this, so hand out the serialized instance.
+            // GetSingleSpriteImportData returns a derived copy, which would discard those writes.
+            return m_SingleSpriteImportData[0];
         }
 
         SpriteMetaData GetSingleSpriteImportData()
         {
             SpriteMetaData spriteMetaData = new SpriteMetaData();
+            spriteMetaData.Copy(m_SingleSpriteImportData[0]);
             spriteMetaData.spriteID = AssetDatabase.GUIDFromAssetPath(assetPath);
-            if (m_SingleSpriteImportData == null || m_SingleSpriteImportData.Count < 1 && m_SingleSpriteImportData[0] != null)
-                spriteMetaData.Copy(m_SingleSpriteImportData[0]);
             if (assetPath != null)
                 spriteMetaData.name = System.IO.Path.GetFileNameWithoutExtension(assetPath) + "_1";
             if (importData != null)

@@ -1,6 +1,10 @@
 # Changelog
 
 
+## [15.0.1] - 2026-08-25
+### Fixed
+- Fix Custom Outline and Custom Physics Outline not being saved when Sprite Mode is set to Single or Polygon. (UUM-150014)
+
 ## [15.0.0] - 2026-05-19
 ### Fixed
 - Package Manager Samples section title now displays "PSD Importer" consistently. (UUM-135396)
