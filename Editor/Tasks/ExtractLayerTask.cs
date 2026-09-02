@@ -103,7 +103,7 @@ namespace UnityEditor.U2D.PSD
             }
         }
 
-        public static unsafe void Execute(in PSDExtractLayerData[] psdExtractLayerData, out List<PSDLayer> outputLayers, bool importHiddenLayer, Vector2Int canvasSize)
+        public static unsafe void Execute(in IReadOnlyList<PSDExtractLayerData> psdExtractLayerData, out List<PSDLayer> outputLayers, bool importHiddenLayer, Vector2Int canvasSize)
         {
             outputLayers = new List<PSDLayer>();
             UnityEngine.Profiling.Profiler.BeginSample("ExtractLayer_PrepareJob");
@@ -162,7 +162,7 @@ namespace UnityEditor.U2D.PSD
             handle.Complete();
         }
 
-        static void ExtractLayerData(in PSDExtractLayerData[] inputLayers, ref List<PSDLayer> extractedLayers, bool importHiddenLayer, bool flatten, bool parentGroupVisible, Vector2Int canvasSize)
+        static void ExtractLayerData(in IReadOnlyList<PSDExtractLayerData> inputLayers, ref List<PSDLayer> extractedLayers, bool importHiddenLayer, bool flatten, bool parentGroupVisible, Vector2Int canvasSize)
         {
             int parentGroupIndex = extractedLayers.Count - 1;
 
@@ -199,7 +199,7 @@ namespace UnityEditor.U2D.PSD
                 extractedLayers.Add(extractedLayer);
 
                 if (inputLayer.children.Length > 0)
-                    ExtractLayerData(in inputLayer.children, ref extractedLayers, importHiddenLayer, flatten || extractedLayer.flatten, layerVisible, canvasSize);
+                    ExtractLayerData(inputLayer.children, ref extractedLayers, importHiddenLayer, flatten || extractedLayer.flatten, layerVisible, canvasSize);
             }
         }
 

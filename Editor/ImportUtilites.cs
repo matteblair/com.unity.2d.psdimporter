@@ -85,6 +85,43 @@ namespace UnityEditor.U2D.PSD
         }
     }
 
+    static class LayerIdHash
+    {
+        /// <summary>
+        /// Layer ids are persisted in the importer's meta file and are used to map layers to
+        /// existing SpriteRects on reimport, so the hash has to stay stable forever and across
+        /// runtimes. <see cref="string.GetHashCode()"/> cannot be used for that: .NET Core
+        /// randomizes it per process, so every reimport would produce a different id and drop all
+        /// existing sprite references.
+        ///
+        /// This reproduces, bit for bit, the non-randomized string hash the Mono runtime used when
+        /// these ids were first written, including its behaviour of stopping at an embedded '\0'.
+        /// </summary>
+        public static int Compute(string str)
+        {
+            int hash1 = 5381;
+            int hash2 = hash1;
+            int length = str.Length;
+
+            for (int i = 0; i < length; i += 2)
+            {
+                int c = str[i];
+                if (c == 0)
+                    break;
+                hash1 = ((hash1 << 5) + hash1) ^ c;
+
+                if (i + 1 == length)
+                    break;
+                c = str[i + 1];
+                if (c == 0)
+                    break;
+                hash2 = ((hash2 << 5) + hash2) ^ c;
+            }
+
+            return hash1 + (hash2 * 1566083941);
+        }
+    }
+
     class GameObjectCreationFactory : UniqueNameGenerator
     {
         public GameObjectCreationFactory(IList<string> names)
@@ -149,7 +186,7 @@ namespace UnityEditor.U2D.PSD
                 {
                     IEnumerable<PSDLayer> oldLayers = oldPsdLayer.Where(x => x.name == childBitmapLayer.Name);
                     if (oldLayers.Count() == 0)
-                        oldLayers = oldPsdLayer.Where(x => x.layerID == childBitmapLayer.Name.GetHashCode());
+                        oldLayers = oldPsdLayer.Where(x => x.layerID == LayerIdHash.Compute(childBitmapLayer.Name));
                     // pick one that is not already on the list
                     foreach (PSDLayer ol in oldLayers)
                     {
@@ -168,7 +205,7 @@ namespace UnityEditor.U2D.PSD
                     layerName = uniqueNameGenerator.GetUniqueName(layerName);
                     if (layerName != childBitmapLayer.Name)
                         importWarning += "\nLayer names are not unique. Please ensure they are unique to for SpriteRect to be mapped back correctly.";
-                    childBitmapLayer.LayerID = layerName.GetHashCode();
+                    childBitmapLayer.LayerID = LayerIdHash.Compute(layerName);
                     Debug.LogWarning(importWarning, importer);
                 }
                 else
@@ -249,7 +286,7 @@ namespace UnityEditor.U2D.PSD
             return generator.GetUniqueName(name);
         }
 
-        public static bool VisibleInHierarchy(List<PSDLayer> psdGroup, int index)
+        public static bool VisibleInHierarchy(IReadOnlyList<PSDLayer> psdGroup, int index)
         {
             PSDLayer psdLayer = psdGroup[index];
             bool parentVisible = true;
@@ -264,7 +301,19 @@ namespace UnityEditor.U2D.PSD
                    metaData.rect == Rect.zero;
         }
 
-#if ENABLE_2D_ANIMATION        
+        public static IPSDLayerMappingStrategy GetLayerMappingStrategy(PSDImporter.ELayerMappingOption option)
+        {
+            switch (option)
+            {
+                case PSDImporter.ELayerMappingOption.UseLayerId: return new LayerMappingUserLayerID();
+                case PSDImporter.ELayerMappingOption.UseLayerName: return new LayerMappingUseLayerName();
+                case PSDImporter.ELayerMappingOption.UseLayerNameCaseSensitive: return new LayerMappingUseLayerNameCaseSensitive();
+                default:
+                    return new LayerMappingUserLayerID();
+            }
+        }
+
+#if ENABLE_2D_ANIMATION
         public static bool SpriteIsMainFromSpriteLib(List<SpriteCategory> categories, string spriteId, out string categoryName)
         {
             categoryName = "";

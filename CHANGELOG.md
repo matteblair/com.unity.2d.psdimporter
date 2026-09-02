@@ -1,9 +1,13 @@
 # Changelog
 
 
-## [15.0.1] - 2026-08-25
+## [16.0.0] - 2026-09-02
+### Changed
+- Internal refactor to isolate code that does meta writing.
+
 ### Fixed
 - Fix Custom Outline and Custom Physics Outline not being saved when Sprite Mode is set to Single or Polygon. (UUM-150014)
+- Fixed layers with duplicated names losing their Sprite ID and Sprite rect when Layer Mapping is set to Use Layer Name. (UUM-150011)
 
 ## [15.0.0] - 2026-05-19
 ### Fixed
